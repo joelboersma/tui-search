@@ -40,7 +40,7 @@ func main() {
 
 	list := tview.NewList()
 	for index, link := range links {
-		key := (index + 1) % 10
+		key := (index + 1) % 10 // 0-9
 		shortcut := rune(key + '0')
 		list.AddItem(link.Title, link.Url, shortcut, func() { link.open() })
 	}
