@@ -12,6 +12,7 @@ type Link struct {
 func main() {
 	app := tview.NewApplication()
 
+	// sample data
 	links := []Link{
 		{
 			"A (not so) short laptop recommendation guide - 2025 ...",
@@ -25,6 +26,10 @@ func main() {
 			"The best laptops in 2025 based on our testing and reviews",
 			"https://www.laptopmag.com/reviews/best-laptops-1",
 		},
+	}
+
+	if len(links) > 10 {
+		links = links[:10]
 	}
 
 	list := tview.NewList()
