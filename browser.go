@@ -20,7 +20,7 @@ func OpenURL(url string) error {
 	case "darwin":
 		cmd = "open"
 		args = []string{url}
-	default:
+	default: // "linux", "freebsd", "openbsd", "netbsd"
 		if isWSL() {
 			cmd = "cmd.exe"
 			args = []string{"/c", "start", url}
