@@ -9,6 +9,12 @@ type Link struct {
 	Url   string
 }
 
+func (l *Link) open() {
+	if err := OpenURL(l.Url); err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	app := tview.NewApplication()
 
@@ -34,12 +40,9 @@ func main() {
 
 	list := tview.NewList()
 	for index, link := range links {
-		index := index + 1
-		if index == 10 {
-			index = 0
-		}
-		shortcut := rune(index + '0')
-		list.AddItem(link.Title, link.Url, shortcut, func() {})
+		key := (index + 1) % 10
+		shortcut := rune(key + '0')
+		list.AddItem(link.Title, link.Url, shortcut, func() { link.open() })
 	}
 	list.AddItem("Quit", "Press to exit", 'q', func() {
 		app.Stop()
