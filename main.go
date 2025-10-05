@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -15,9 +16,42 @@ func (l *Link) open() {
 	}
 }
 
-func main() {
-	app := tview.NewApplication()
+func renderSearchView(app *tview.Application, onSubmit func()) {
+	inputField := tview.NewInputField()
+	inputField.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEnter:
+			onSubmit()
+		case tcell.KeyEscape:
+			app.Stop()
+		}
+	})
 
+	app.SetRoot(inputField, true)
+}
+
+func renderResultsView(app *tview.Application, links *[]Link) {
+	var firstTenLinks []Link
+	if len(*links) > 10 {
+		firstTenLinks = (*links)[:10]
+	} else {
+		firstTenLinks = *links
+	}
+
+	list := tview.NewList()
+	for index, link := range firstTenLinks {
+		key := (index + 1) % 10 // 0-9
+		shortcut := rune(key + '0')
+		list.AddItem(link.Title, link.Url, shortcut, func() { link.open() })
+	}
+	list.AddItem("Quit", "Press to exit", 'q', func() {
+		app.Stop()
+	})
+
+	app.SetRoot(list, true)
+}
+
+func main() {
 	// sample data
 	links := []Link{
 		{
@@ -34,21 +68,12 @@ func main() {
 		},
 	}
 
-	if len(links) > 10 {
-		links = links[:10]
-	}
+	app := tview.NewApplication()
 
-	list := tview.NewList()
-	for index, link := range links {
-		key := (index + 1) % 10 // 0-9
-		shortcut := rune(key + '0')
-		list.AddItem(link.Title, link.Url, shortcut, func() { link.open() })
-	}
-	list.AddItem("Quit", "Press to exit", 'q', func() {
-		app.Stop()
-	})
+	onSearchSubmit := func() { renderResultsView(app, &links) }
+	renderSearchView(app, onSearchSubmit)
 
-	if err := app.SetRoot(list, true).Run(); err != nil {
+	if err := app.Run(); err != nil {
 		panic(err)
 	}
 }
