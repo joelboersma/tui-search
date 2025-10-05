@@ -2,7 +2,10 @@ module github.com/joelboersma/tui-search
 
 go 1.25.1
 
-require github.com/rivo/tview v0.42.1-0.20250929082832-e113793670e2
+require (
+	github.com/rivo/tview v0.42.1-0.20250929082832-e113793670e2
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
+)
 
 require (
 	github.com/gdamore/encoding v1.0.1 // indirect
