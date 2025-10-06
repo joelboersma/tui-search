@@ -27,7 +27,7 @@ func renderSearchView(app *tview.Application, onSubmit func()) {
 		}
 	})
 
-	inputField.SetBorder(true).SetTitle("Search")
+	inputField.SetBorder(true).SetTitle("Search").SetBorderPadding(1, 1, 3, 3)
 	app.SetRoot(inputField, true)
 }
 
