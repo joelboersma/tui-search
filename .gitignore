@@ -2,5 +2,8 @@
 tui-search
 tui-search.exe
 
+# env
+.env
+
 # editor config
 .vscode
