@@ -27,6 +27,7 @@ func renderSearchView(app *tview.Application, onSubmit func()) {
 		}
 	})
 
+	inputField.SetBorder(true).SetTitle("Search")
 	app.SetRoot(inputField, true)
 }
 
@@ -48,6 +49,7 @@ func renderResultsView(app *tview.Application, links *[]Link) {
 		app.Stop()
 	})
 
+	list.SetBorder(true).SetTitle("Results")
 	app.SetRoot(list, true)
 }
 
