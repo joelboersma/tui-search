@@ -3,27 +3,23 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"google.golang.org/api/customsearch/v1"
 )
 
-type Link struct {
-	Title string
-	Url   string
-}
+var (
+	app *tview.Application
+)
 
-func (l *Link) open() {
-	if err := OpenURL(l.Url); err != nil {
-		panic(err)
-	}
-}
-
-func renderSearchView(app *tview.Application, onSubmit func()) {
+func renderSearchView() {
 	inputField := tview.NewInputField()
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		switch key {
-		case tcell.KeyEnter:
-			onSubmit()
 		case tcell.KeyEscape:
 			app.Stop()
+		case tcell.KeyEnter:
+			query := inputField.GetText()
+			response := Search(query)
+			renderResultsView(response)
 		}
 	})
 
@@ -31,19 +27,16 @@ func renderSearchView(app *tview.Application, onSubmit func()) {
 	app.SetRoot(inputField, true)
 }
 
-func renderResultsView(app *tview.Application, links *[]Link) {
-	var firstTenLinks []Link
-	if len(*links) > 10 {
-		firstTenLinks = (*links)[:10]
-	} else {
-		firstTenLinks = *links
-	}
+func renderResultsView(searchResponse *customsearch.Search) {
+	results := searchResponse.Items
 
 	list := tview.NewList()
-	for index, link := range firstTenLinks {
+	for index, result := range results {
 		key := (index + 1) % 10 // 0-9
 		shortcut := rune(key + '0')
-		list.AddItem(link.Title, link.Url, shortcut, func() { link.open() })
+		list.AddItem(result.Title, result.DisplayLink, shortcut, func() {
+			OpenURL(result.Link)
+		})
 	}
 	list.AddItem("Quit", "Press to exit", 'q', func() {
 		app.Stop()
@@ -54,26 +47,11 @@ func renderResultsView(app *tview.Application, links *[]Link) {
 }
 
 func main() {
-	// sample data
-	links := []Link{
-		{
-			"A (not so) short laptop recommendation guide - 2025 ...",
-			"https://www.reddit.com/r/gamedev/comments/1hr463f/a_not_so_short_laptop_recommendation_guide_2025/",
-		},
-		{
-			"The Best Laptops We've Tested (October 2025)",
-			"https://www.pcmag.com/picks/the-best-laptops",
-		},
-		{
-			"The best laptops in 2025 based on our testing and reviews",
-			"https://www.laptopmag.com/reviews/best-laptops-1",
-		},
-	}
+	InitSearchService()
 
-	app := tview.NewApplication()
+	app = tview.NewApplication()
 
-	onSearchSubmit := func() { renderResultsView(app, &links) }
-	renderSearchView(app, onSearchSubmit)
+	renderSearchView()
 
 	if err := app.Run(); err != nil {
 		panic(err)

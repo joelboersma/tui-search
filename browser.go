@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os/exec"
 	"strings"
 
@@ -8,12 +9,18 @@ import (
 )
 
 // Opens the specified URL in the default browser of the user.
-func OpenURL(url string) error {
+func OpenURL(url string) {
+	var err error
+
 	if isWSL() {
 		// Open default browser within Windows instead of the Linux subsystem
-		return exec.Command("cmd.exe", "/c", "", "start", url).Start()
+		err = exec.Command("cmd.exe", "/c", "", "start", url).Start()
 	} else {
-		return browser.OpenURL(url)
+		err = browser.OpenURL(url)
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
