@@ -11,6 +11,7 @@ import (
 )
 
 const resultsPerPage = 10
+const maxResults = 100
 
 var (
 	svc *customsearch.Service
@@ -36,14 +37,38 @@ func InitSearchService() {
 }
 
 func Search(query string, start int64) *customsearch.Search {
-	if start+resultsPerPage > 100 {
-		log.Fatal("cannot have more than 100 results per query")
-	}
-
 	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return resp
+}
+
+func HasNextPage(searchResponse *customsearch.Search) bool {
+	return len(searchResponse.Queries.NextPage) > 0
+}
+
+func HasPrevPage(searchResponse *customsearch.Search) bool {
+	if len(searchResponse.Queries.PreviousPage) == 0 {
+		return false
+	}
+
+	startIndex := searchResponse.Queries.PreviousPage[0].StartIndex
+	if resultsPerPage+startIndex > maxResults {
+		// Cannot have more than maxResults results per query across all pages.
+		return false
+	}
+
+	return true
+}
+
+func NextPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
+	startIndex := searchResponse.Queries.NextPage[0].StartIndex
+	return Search(query, startIndex)
+}
+
+func PrevPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
+	startIndex := searchResponse.Queries.PreviousPage[0].StartIndex
+	return Search(query, startIndex)
 }

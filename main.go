@@ -41,19 +41,17 @@ func renderResultsView(searchResponse *customsearch.Search, query string) {
 	}
 
 	// Next page
-	if len(searchResponse.Queries.NextPage) > 0 {
-		nextPageQuery := searchResponse.Queries.NextPage[0]
+	if HasNextPage(searchResponse) {
 		list.AddItem("Next", "Next page of results", 'n', func() {
-			response := Search(query, nextPageQuery.StartIndex)
+			response := NextPage(query, searchResponse)
 			renderResultsView(response, query)
 		})
 	}
 
 	// Previous page
-	if len(searchResponse.Queries.PreviousPage) > 0 {
-		prevPageQuery := searchResponse.Queries.PreviousPage[0]
+	if HasPrevPage(searchResponse) {
 		list.AddItem("Previous", "Previous page of results", 'b', func() {
-			response := Search(query, prevPageQuery.StartIndex)
+			response := PrevPage(query, searchResponse)
 			renderResultsView(response, query)
 		})
 	}
