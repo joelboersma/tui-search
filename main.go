@@ -18,8 +18,8 @@ func renderSearchView() {
 			app.Stop()
 		case tcell.KeyEnter:
 			query := inputField.GetText()
-			response := Search(query)
-			renderResultsView(response)
+			response := Search(query, 0)
+			renderResultsView(response, query)
 		}
 	})
 
@@ -27,17 +27,38 @@ func renderSearchView() {
 	app.SetRoot(inputField, true)
 }
 
-func renderResultsView(searchResponse *customsearch.Search) {
+func renderResultsView(searchResponse *customsearch.Search, query string) {
 	results := searchResponse.Items
 
+	// Results
 	list := tview.NewList()
 	for index, result := range results {
-		key := (index + 1) % 10 // 0-9
+		key := (index + 1) % resultsPerPage
 		shortcut := rune(key + '0')
 		list.AddItem(result.Title, result.DisplayLink, shortcut, func() {
 			OpenURL(result.Link)
 		})
 	}
+
+	// Next page
+	if len(searchResponse.Queries.NextPage) > 0 {
+		nextPageQuery := searchResponse.Queries.NextPage[0]
+		list.AddItem("Next", "Next page of results", 'n', func() {
+			response := Search(query, nextPageQuery.StartIndex)
+			renderResultsView(response, query)
+		})
+	}
+
+	// Previous page
+	if len(searchResponse.Queries.PreviousPage) > 0 {
+		prevPageQuery := searchResponse.Queries.PreviousPage[0]
+		list.AddItem("Previous", "Previous page of results", 'b', func() {
+			response := Search(query, prevPageQuery.StartIndex)
+			renderResultsView(response, query)
+		})
+	}
+
+	// Quit
 	list.AddItem("Quit", "Press to exit", 'q', func() {
 		app.Stop()
 	})

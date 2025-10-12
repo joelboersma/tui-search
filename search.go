@@ -10,6 +10,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+const resultsPerPage = 10
+
 var (
 	svc *customsearch.Service
 
@@ -33,8 +35,12 @@ func InitSearchService() {
 	}
 }
 
-func Search(query string) *customsearch.Search {
-	resp, err := svc.Cse.List().Cx(cx).Q(query).Num(10).Do()
+func Search(query string, start int64) *customsearch.Search {
+	if start+resultsPerPage > 100 {
+		log.Fatal("cannot have more than 100 results per query")
+	}
+
+	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
