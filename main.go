@@ -18,6 +18,9 @@ func renderSearchView() {
 			app.Stop()
 		case tcell.KeyEnter:
 			query := inputField.GetText()
+			if query == "" {
+				return
+			}
 			response := Search(query, 0)
 			renderResultsView(response, query)
 		}
