@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/api/customsearch/v1"
@@ -42,7 +43,13 @@ func Search(query string, start int64) *customsearch.Search {
 	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
 		app.Stop()
-		log.Fatal(err)
+
+		if strings.Contains(err.Error(), "\"reason\": \"RATE_LIMIT_EXCEEDED\"") {
+			log.Fatal("Google CustomSearch API Quota Exceeded")
+		} else {
+			// Unknown error
+			log.Fatal(err)
+		}
 	}
 
 	return resp
