@@ -23,6 +23,7 @@ var (
 func InitSearchService() {
 	err := godotenv.Load()
 	if err != nil {
+		app.Stop()
 		log.Fatal(err)
 	}
 
@@ -32,6 +33,7 @@ func InitSearchService() {
 	ctx := context.Background()
 	svc, err = customsearch.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
+		app.Stop()
 		log.Fatal(err)
 	}
 }
@@ -39,6 +41,7 @@ func InitSearchService() {
 func Search(query string, start int64) *customsearch.Search {
 	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
+		app.Stop()
 		log.Fatal(err)
 	}
 
