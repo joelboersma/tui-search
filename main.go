@@ -61,6 +61,9 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 		})
 	}
 
+	// New query
+	list.AddItem("New Search", "Start a new search", 's', renderSearchView)
+
 	// Quit
 	list.AddItem("Quit", "Press to exit", 'q', func() {
 		app.Stop()
