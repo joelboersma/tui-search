@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/api/customsearch/v1"
@@ -22,7 +24,7 @@ func renderSearchView() {
 				return
 			}
 			response := Search(query, 0)
-			renderResultsView(response, query)
+			renderResultsView(response, query, 1)
 		}
 	})
 
@@ -30,7 +32,7 @@ func renderSearchView() {
 	app.SetRoot(inputField, true)
 }
 
-func renderResultsView(searchResponse *customsearch.Search, query string) {
+func renderResultsView(searchResponse *customsearch.Search, query string, pageNumber int) {
 	results := searchResponse.Items
 
 	// Results
@@ -47,7 +49,7 @@ func renderResultsView(searchResponse *customsearch.Search, query string) {
 	if HasNextPage(searchResponse) {
 		list.AddItem("Next", "Next page of results", 'n', func() {
 			response := NextPage(query, searchResponse)
-			renderResultsView(response, query)
+			renderResultsView(response, query, pageNumber+1)
 		})
 	}
 
@@ -55,7 +57,7 @@ func renderResultsView(searchResponse *customsearch.Search, query string) {
 	if HasPrevPage(searchResponse) {
 		list.AddItem("Previous", "Previous page of results", 'b', func() {
 			response := PrevPage(query, searchResponse)
-			renderResultsView(response, query)
+			renderResultsView(response, query, pageNumber-1)
 		})
 	}
 
@@ -64,7 +66,8 @@ func renderResultsView(searchResponse *customsearch.Search, query string) {
 		app.Stop()
 	})
 
-	list.SetBorder(true).SetTitle("Results")
+	title := fmt.Sprint("Results - Page ", pageNumber)
+	list.SetBorder(true).SetTitle(title)
 	app.SetRoot(list, true)
 }
 
