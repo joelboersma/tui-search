@@ -23,8 +23,11 @@ func renderSearchView() {
 			if query == "" {
 				return
 			}
-			response := Search(query, 0)
-			renderResultsView(response, query, 1)
+			showLoading()
+			go func() {
+				response := Search(query, 0)
+				renderResultsView(response, query, 1)
+			}()
 		}
 	})
 
@@ -48,16 +51,22 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 	// Next page
 	if HasNextPage(searchResponse) {
 		list.AddItem("Next", "Next page of results", 'n', func() {
-			response := NextPage(query, searchResponse)
-			renderResultsView(response, query, pageNumber+1)
+			showLoading()
+			go func() {
+				response := NextPage(query, searchResponse)
+				renderResultsView(response, query, pageNumber+1)
+			}()
 		})
 	}
 
 	// Previous page
 	if HasPrevPage(searchResponse) {
 		list.AddItem("Previous", "Previous page of results", 'b', func() {
-			response := PrevPage(query, searchResponse)
-			renderResultsView(response, query, pageNumber-1)
+			showLoading()
+			go func() {
+				response := PrevPage(query, searchResponse)
+				renderResultsView(response, query, pageNumber-1)
+			}()
 		})
 	}
 
@@ -72,6 +81,12 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 	title := fmt.Sprint("Results - Page ", pageNumber)
 	list.SetBorder(true).SetTitle(title)
 	app.SetRoot(list, true)
+}
+
+func showLoading() {
+	textView := tview.NewTextView()
+	textView.SetText("Loading...")
+	app.SetRoot(textView, true)
 }
 
 func main() {
