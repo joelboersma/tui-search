@@ -24,6 +24,9 @@ func renderSearchView() {
 				return
 			}
 
+			// hide cursor
+			app.SetFocus(nil)
+
 			pageNumber := 1
 			showLoading(pageNumber)
 
@@ -110,6 +113,7 @@ func showLoading(pageNumber int) {
 
 	title := fmt.Sprint("Results - Page ", pageNumber)
 	rowFlex.SetTitle(title).SetBorder(true)
+
 	app.SetRoot(rowFlex, true)
 }
 
