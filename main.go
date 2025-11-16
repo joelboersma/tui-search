@@ -87,14 +87,14 @@ func showLoading() {
 	loadingText := "Loading..."
 	textView := tview.NewTextView().SetText(loadingText)
 
-	// Horizontally center loading indicator in a column colFlex
+	// Horizontally center the loading indicator in a column flex
 	colFlex := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(tview.NewBox(), 0, 1, false).
 		AddItem(textView, len(loadingText), 1, true).
 		AddItem(tview.NewBox(), 0, 1, false)
 
-	// Vertically center column flex in a row flex
+	// Vertically center the column flex in a row flex
 	rowFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(tview.NewBox(), 0, 1, false).
