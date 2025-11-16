@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"strings"
@@ -21,19 +22,29 @@ var (
 	cx     string // GOOGLE_CUSTOM_SEARCH_CONTEXT
 )
 
+func fileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
+	return !errors.Is(err, os.ErrNotExist)
+}
+
 func InitSearchService() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
+	var err error
+	if fileExists(".env") {
+		if err = godotenv.Load(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	apiKey = os.Getenv("GOOGLE_API_KEY")
 	cx = os.Getenv("GOOGLE_CUSTOM_SEARCH_CONTEXT")
 
+	if apiKey == "" || cx == "" {
+		log.Fatal("Must define environment variables GOOGLE_API_KEY and GOOGLE_CUSTOM_SEARCH_CONTEXT")
+	}
+
 	ctx := context.Background()
 	svc, err = customsearch.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
-		app.Stop()
 		log.Fatal(err)
 	}
 }
