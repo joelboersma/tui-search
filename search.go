@@ -39,7 +39,7 @@ func InitSearchService() {
 	}
 }
 
-func Search(query string, start int64) *customsearch.Search {
+func search(query string, start int64) *customsearch.Search {
 	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
 		app.Stop()
@@ -53,6 +53,10 @@ func Search(query string, start int64) *customsearch.Search {
 	}
 
 	return resp
+}
+
+func NewSearch(query string) *customsearch.Search {
+	return search(query, 0)
 }
 
 func HasNextPage(searchResponse *customsearch.Search) bool {
@@ -75,10 +79,10 @@ func HasPrevPage(searchResponse *customsearch.Search) bool {
 
 func NextPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
 	startIndex := searchResponse.Queries.NextPage[0].StartIndex
-	return Search(query, startIndex)
+	return search(query, startIndex)
 }
 
 func PrevPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
 	startIndex := searchResponse.Queries.PreviousPage[0].StartIndex
-	return Search(query, startIndex)
+	return search(query, startIndex)
 }

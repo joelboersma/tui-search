@@ -25,7 +25,7 @@ func renderSearchView() {
 			}
 			showLoading()
 			go func() {
-				response := Search(query, 0)
+				response := NewSearch(query)
 				renderResultsView(response, query, 1)
 			}()
 		}
