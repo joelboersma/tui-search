@@ -24,7 +24,6 @@ var (
 func InitSearchService() {
 	err := godotenv.Load()
 	if err != nil {
-		app.Stop()
 		log.Fatal(err)
 	}
 
