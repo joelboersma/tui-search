@@ -94,22 +94,27 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 }
 
 func showLoading(pageNumber int) {
-	textView := tview.NewTextView().
-		SetText("Loading...").
-		SetTextAlign(tview.AlignCenter)
+	loadingText := "Loading..."
+	textView := tview.NewTextView().SetText(loadingText)
 
-	title := fmt.Sprint("Results - Page ", pageNumber)
+	// Horizontally center the loading indicator in a column flex
+	colFlex := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(tview.NewBox(), 0, 1, false).
+		AddItem(textView, len(loadingText), 1, true).
+		AddItem(tview.NewBox(), 0, 1, false)
 
 	// Vertically center the column flex in a row flex
-	flex := tview.NewFlex().
+	rowFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(nil, 0, 1, false).
-		AddItem(textView, 3, 1, false).
-		AddItem(nil, 0, 1, false).
-		SetTitle(title).
-		SetBorder(true)
+		AddItem(tview.NewBox(), 0, 1, false).
+		AddItem(colFlex, 1, 1, true).
+		AddItem(tview.NewBox(), 0, 1, false)
 
-	app.SetRoot(flex, true)
+	title := fmt.Sprint("Results - Page ", pageNumber)
+	rowFlex.SetTitle(title).SetBorder(true)
+
+	app.SetRoot(rowFlex, true)
 }
 
 func main() {
