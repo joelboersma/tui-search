@@ -32,7 +32,9 @@ func renderSearchView() {
 
 			go func() {
 				response := NewSearch(query)
-				renderResultsView(response, query, 1)
+				app.QueueUpdateDraw(func() {
+					renderResultsView(response, query, 1)
+				})
 			}()
 		}
 	})
@@ -62,7 +64,9 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 
 			go func() {
 				response := NextPage(query, searchResponse)
-				renderResultsView(response, query, newPage)
+				app.QueueUpdateDraw(func() {
+					renderResultsView(response, query, newPage)
+				})
 			}()
 		})
 	}
@@ -75,7 +79,9 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 
 			go func() {
 				response := PrevPage(query, searchResponse)
-				renderResultsView(response, query, newPage)
+				app.QueueUpdateDraw(func() {
+					renderResultsView(response, query, newPage)
+				})
 			}()
 		})
 	}
