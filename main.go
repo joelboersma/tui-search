@@ -5,7 +5,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"google.golang.org/api/customsearch/v1"
 )
 
 var (
@@ -31,7 +30,7 @@ func renderSearchView() {
 			showLoading(pageNumber)
 
 			go func() {
-				response := NewSearch(query)
+				response := s.NewSearch(query)
 				app.QueueUpdateDraw(func() {
 					renderResultsView(response, query, 1)
 				})
@@ -43,27 +42,25 @@ func renderSearchView() {
 	app.SetRoot(inputField, true)
 }
 
-func renderResultsView(searchResponse *customsearch.Search, query string, pageNumber int) {
-	results := searchResponse.Items
-
+func renderResultsView(results []SearchResult, query string, pageNumber int) {
 	// Results
 	list := tview.NewList()
 	for index, result := range results {
 		key := (index + 1) % resultsPerPage
 		shortcut := rune(key + '0')
-		list.AddItem(result.Title, result.DisplayLink, shortcut, func() {
-			OpenURL(result.Link)
+		list.AddItem(result.Title, result.DisplayURL, shortcut, func() {
+			OpenURL(result.URL)
 		})
 	}
 
 	// Next page
-	if HasNextPage(searchResponse) {
+	if s.HasNextPage() {
 		list.AddItem("Next", "Next page of results", 'n', func() {
 			newPage := pageNumber + 1
 			showLoading(newPage)
 
 			go func() {
-				response := NextPage(query, searchResponse)
+				response := s.NextPage(query)
 				app.QueueUpdateDraw(func() {
 					renderResultsView(response, query, newPage)
 				})
@@ -72,13 +69,13 @@ func renderResultsView(searchResponse *customsearch.Search, query string, pageNu
 	}
 
 	// Previous page
-	if HasPrevPage(searchResponse) {
+	if s.HasPrevPage() {
 		list.AddItem("Previous", "Previous page of results", 'b', func() {
 			newPage := pageNumber - 1
 			showLoading(newPage)
 
 			go func() {
-				response := PrevPage(query, searchResponse)
+				response := s.PrevPage(query)
 				app.QueueUpdateDraw(func() {
 					renderResultsView(response, query, newPage)
 				})

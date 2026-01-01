@@ -15,12 +15,7 @@ import (
 const resultsPerPage = 10
 const maxResults = 100
 
-var (
-	svc *customsearch.Service
-
-	apiKey string // GOOGLE_API_KEY
-	cx     string // GOOGLE_CUSTOM_SEARCH_CONTEXT
-)
+var s SearchService
 
 func fileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
@@ -28,29 +23,58 @@ func fileExists(filePath string) bool {
 }
 
 func InitSearchService() {
-	var err error
 	if fileExists(".env") {
-		if err = godotenv.Load(); err != nil {
+		if err := godotenv.Load(); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	apiKey = os.Getenv("GOOGLE_API_KEY")
-	cx = os.Getenv("GOOGLE_CUSTOM_SEARCH_CONTEXT")
+	// TODO: select between Google and other providers
+	s = &GoogleSearchService{}
+	s.Init()
+}
 
-	if apiKey == "" || cx == "" {
+type SearchResult struct {
+	Title      string
+	URL        string
+	DisplayURL string
+}
+
+type SearchService interface {
+	Init()
+	NewSearch(query string) []SearchResult
+	NextPage(query string) []SearchResult
+	PrevPage(query string) []SearchResult
+	HasNextPage() bool
+	HasPrevPage() bool
+}
+
+type GoogleSearchService struct {
+	svc    *customsearch.Service
+	apiKey string // GOOGLE_API_KEY
+	cx     string // GOOGLE_CUSTOM_SEARCH_CONTEXT
+
+	curResponse *customsearch.Search
+}
+
+func (s *GoogleSearchService) Init() {
+	s.apiKey = os.Getenv("GOOGLE_API_KEY")
+	s.cx = os.Getenv("GOOGLE_CUSTOM_SEARCH_CONTEXT")
+
+	if s.apiKey == "" || s.cx == "" {
 		log.Fatal("Must define environment variables GOOGLE_API_KEY and GOOGLE_CUSTOM_SEARCH_CONTEXT")
 	}
 
+	var err error
 	ctx := context.Background()
-	svc, err = customsearch.NewService(ctx, option.WithAPIKey(apiKey))
+	s.svc, err = customsearch.NewService(ctx, option.WithAPIKey(s.apiKey))
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func search(query string, start int64) *customsearch.Search {
-	resp, err := svc.Cse.List().Cx(cx).Q(query).Start(start).Num(resultsPerPage).Do()
+func (s *GoogleSearchService) search(query string, start int64) {
+	resp, err := s.svc.Cse.List().Cx(s.cx).Q(query).Start(start).Num(resultsPerPage).Do()
 	if err != nil {
 		app.Stop()
 
@@ -62,23 +86,36 @@ func search(query string, start int64) *customsearch.Search {
 		}
 	}
 
-	return resp
+	s.curResponse = resp
 }
 
-func NewSearch(query string) *customsearch.Search {
-	return search(query, 0)
+func (s *GoogleSearchService) NewSearch(query string) []SearchResult {
+	s.search(query, 0)
+	return s.toSearchResults()
 }
 
-func HasNextPage(searchResponse *customsearch.Search) bool {
-	return len(searchResponse.Queries.NextPage) > 0
+func (s *GoogleSearchService) NextPage(query string) []SearchResult {
+	startIndex := s.curResponse.Queries.NextPage[0].StartIndex
+	s.search(query, startIndex)
+	return s.toSearchResults()
 }
 
-func HasPrevPage(searchResponse *customsearch.Search) bool {
-	if len(searchResponse.Queries.PreviousPage) == 0 {
+func (s *GoogleSearchService) PrevPage(query string) []SearchResult {
+	startIndex := s.curResponse.Queries.PreviousPage[0].StartIndex
+	s.search(query, startIndex)
+	return s.toSearchResults()
+}
+
+func (s *GoogleSearchService) HasNextPage() bool {
+	return len(s.curResponse.Queries.NextPage) > 0
+}
+
+func (s *GoogleSearchService) HasPrevPage() bool {
+	if s == nil || len(s.curResponse.Queries.PreviousPage) == 0 {
 		return false
 	}
 
-	startIndex := searchResponse.Queries.PreviousPage[0].StartIndex
+	startIndex := s.curResponse.Queries.PreviousPage[0].StartIndex
 	if resultsPerPage+startIndex > maxResults {
 		// Cannot have more than maxResults results per query across all pages.
 		return false
@@ -87,12 +124,13 @@ func HasPrevPage(searchResponse *customsearch.Search) bool {
 	return true
 }
 
-func NextPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
-	startIndex := searchResponse.Queries.NextPage[0].StartIndex
-	return search(query, startIndex)
-}
-
-func PrevPage(query string, searchResponse *customsearch.Search) *customsearch.Search {
-	startIndex := searchResponse.Queries.PreviousPage[0].StartIndex
-	return search(query, startIndex)
+func (s *GoogleSearchService) toSearchResults() []SearchResult {
+	results := []SearchResult{}
+	for _, item := range s.curResponse.Items {
+		result := SearchResult{
+			item.Title, item.Link, item.DisplayLink,
+		}
+		results = append(results, result)
+	}
+	return results
 }
