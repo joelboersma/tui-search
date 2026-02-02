@@ -25,9 +25,26 @@ func InitSearchService() {
 		}
 	}
 
-	// TODO: select between Google and other providers
-	s = &GoogleSearchService{}
-	s.Init()
+	// If Brave is defined, use it
+	braveKey := os.Getenv("BRAVE_API_KEY")
+	if braveKey != "" {
+		s = &BraveSearchService{}
+		s.Init()
+		return
+	}
+
+	// If Google is defined, use it
+	googleKey := os.Getenv("GOOGLE_API_KEY")
+	googleCx := os.Getenv("GOOGLE_CUSTOM_SEARCH_CONTEXT")
+	if googleKey != "" && googleCx != "" {
+		s = &GoogleSearchService{}
+		s.Init()
+		return
+	}
+
+	if s == nil {
+		log.Fatal("No environment variables set for search. For Brave, must set BRAVE_API_KEY. For Google, must set GOOGLE_API_KEY and GOOGLE_CUSTOM_SEARCH_CONTEXT.")
+	}
 }
 
 type SearchResult struct {

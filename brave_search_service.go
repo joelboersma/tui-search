@@ -1,9 +1,24 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"strings"
 )
+
+type BraveSearchResponse struct {
+	Web BraveSearchWebResponse `json:"web"`
+}
+type BraveSearchWebResponse struct {
+	Results []BraveSearchWebResult `json:"results"`
+}
+type BraveSearchWebResult struct {
+	Title string `json:"title"`
+	Url   string `json:"url"`
+}
 
 type BraveSearchService struct {
 	apiKey string // BRAVE_API_KEY
@@ -15,3 +30,94 @@ func (s *BraveSearchService) Init() {
 		log.Fatal("Must define environment variable BRAVE_API_KEY")
 	}
 }
+
+func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		"https://api.search.brave.com/res/v1/web/search",
+		nil,
+	)
+	if err != nil {
+		app.Stop()
+		log.Fatal(err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("X-Subscription-Token", s.apiKey)
+
+	q := req.URL.Query()
+	q.Add("q", query)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		app.Stop()
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", resp.StatusCode, body)
+	}
+	if err != nil {
+		app.Stop()
+		log.Fatal(err)
+	}
+
+	var parsedResponse BraveSearchResponse
+	err = json.NewDecoder(resp.Body).Decode(&parsedResponse)
+	if err != nil {
+		app.Stop()
+		log.Fatal(err)
+	}
+
+	return parsedResponse.Web.Results
+}
+
+func (s *BraveSearchService) NewSearch(query string) []SearchResult {
+	braveResults := s.search(query)
+	return s.toSearchResults(braveResults)
+}
+
+func (s *BraveSearchService) NextPage(query string) []SearchResult {
+	// TODO - not implemented
+	return s.NewSearch(query)
+}
+
+func (s *BraveSearchService) PrevPage(query string) []SearchResult {
+	// TODO - not implemented
+	return s.NewSearch(query)
+}
+
+func (s *BraveSearchService) HasNextPage() bool {
+	// TODO - not implemented
+	return false
+}
+
+func (s *BraveSearchService) HasPrevPage() bool {
+	// TODO - not implemented
+	return false
+}
+
+func (s *BraveSearchService) toSearchResults(braveResults []BraveSearchWebResult) []SearchResult {
+	results := []SearchResult{}
+	for _, item := range braveResults {
+		displayUrl := item.Url
+		displayUrl = strings.TrimPrefix(displayUrl, "http://")
+		displayUrl = strings.TrimPrefix(displayUrl, "https://")
+		displayUrl = strings.Split(displayUrl, "/")[0]
+
+		result := SearchResult{
+			item.Title, item.Url, displayUrl,
+		}
+		results = append(results, result)
+	}
+	return results
+}
+
+// curl "https://api.search.brave.com/res/v1/web/search?q=brave+search" \
+//   -H "Accept: application/json" \
+//   -H "Accept-Encoding: gzip" \
+//   -H "X-Subscription-Token: <YOUR_API_KEY>"
