@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -47,6 +48,7 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 
 	q := req.URL.Query()
 	q.Add("q", query)
+	q.Add("count", strconv.Itoa(resultsPerPage))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := http.DefaultClient.Do(req)
