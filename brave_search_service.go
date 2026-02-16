@@ -47,6 +47,7 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 
 	q := req.URL.Query()
 	q.Add("q", query)
+	req.URL.RawQuery = q.Encode()
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
