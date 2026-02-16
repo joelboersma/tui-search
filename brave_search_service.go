@@ -42,7 +42,6 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Accept-Encoding", "gzip")
 	req.Header.Set("X-Subscription-Token", s.apiKey)
 
 	q := req.URL.Query()
