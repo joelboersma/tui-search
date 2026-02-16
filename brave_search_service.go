@@ -22,7 +22,8 @@ type BraveSearchWebResult struct {
 }
 
 type BraveSearchService struct {
-	apiKey string // BRAVE_API_KEY
+	apiKey  string // BRAVE_API_KEY
+	curPage int
 }
 
 func (s *BraveSearchService) Init() {
@@ -49,6 +50,7 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 	q := req.URL.Query()
 	q.Add("q", query)
 	q.Add("count", strconv.Itoa(resultsPerPage))
+	q.Add("offset", strconv.Itoa(s.curPage-1))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := http.DefaultClient.Do(req)
@@ -82,28 +84,29 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 }
 
 func (s *BraveSearchService) NewSearch(query string) []SearchResult {
+	s.curPage = 1
 	braveResults := s.search(query)
 	return s.toSearchResults(braveResults)
 }
 
 func (s *BraveSearchService) NextPage(query string) []SearchResult {
-	// TODO - not implemented
-	return s.NewSearch(query)
+	s.curPage += 1
+	braveResults := s.search(query)
+	return s.toSearchResults(braveResults)
 }
 
 func (s *BraveSearchService) PrevPage(query string) []SearchResult {
-	// TODO - not implemented
-	return s.NewSearch(query)
+	s.curPage -= 1
+	braveResults := s.search(query)
+	return s.toSearchResults(braveResults)
 }
 
 func (s *BraveSearchService) HasNextPage() bool {
-	// TODO - not implemented
-	return false
+	return resultsPerPage*s.curPage < maxResults
 }
 
 func (s *BraveSearchService) HasPrevPage() bool {
-	// TODO - not implemented
-	return false
+	return s.curPage > 1
 }
 
 func (s *BraveSearchService) toSearchResults(braveResults []BraveSearchWebResult) []SearchResult {
