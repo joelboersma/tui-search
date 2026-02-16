@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -56,8 +57,7 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 
 	if resp.StatusCode != http.StatusOK {
 		app.Stop()
-		var parsedBody string
-		err = json.NewDecoder(resp.Body).Decode(&parsedBody)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalf(
 				"Response failed with status code: %d.\nBody parsing failed with error: %s",
@@ -65,7 +65,7 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 				err,
 			)
 		}
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", resp.StatusCode, parsedBody)
+		log.Fatalf("Response failed with...\nStatus code: %d\nBody: %s\n", resp.StatusCode, body)
 	}
 
 	var parsedResponse BraveSearchResponse
