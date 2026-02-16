@@ -127,5 +127,4 @@ func (s *BraveSearchService) toSearchResults(braveResults []BraveSearchWebResult
 
 // curl "https://api.search.brave.com/res/v1/web/search?q=brave+search" \
 //   -H "Accept: application/json" \
-//   -H "Accept-Encoding: gzip" \
 //   -H "X-Subscription-Token: <YOUR_API_KEY>"
