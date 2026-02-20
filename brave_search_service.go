@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type BraveSearchResponse struct {
@@ -22,8 +23,9 @@ type BraveSearchWebResult struct {
 }
 
 type BraveSearchService struct {
-	apiKey  string // BRAVE_API_KEY
-	curPage int
+	apiKey      string // BRAVE_API_KEY
+	curPage     int
+	rateLimiter chan bool
 }
 
 func (s *BraveSearchService) Init() {
@@ -31,9 +33,15 @@ func (s *BraveSearchService) Init() {
 	if s.apiKey == "" {
 		log.Fatal("Must define environment variable BRAVE_API_KEY")
 	}
+
+	s.rateLimiter = make(chan bool, 1)
+	s.rateLimiter <- true
 }
 
 func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
+	// Do not send request until per-request rate limit has completed
+	<-s.rateLimiter
+
 	req, err := http.NewRequest(
 		http.MethodGet,
 		"https://api.search.brave.com/res/v1/web/search",
@@ -71,6 +79,21 @@ func (s *BraveSearchService) search(query string) []BraveSearchWebResult {
 			)
 		}
 		log.Fatalf("Response failed with...\nStatus code: %d\nBody: %s\n", resp.StatusCode, body)
+	}
+
+	// Begin per-request rate limit
+	limits := strings.Split(resp.Header.Get("X-RateLimit-Limit"), ", ")
+	if len(limits) > 0 {
+		numSecondsToWait, err := strconv.Atoi(limits[0])
+		if err != nil {
+			app.Stop()
+			log.Fatal("Error parsing X-RateLimit-Limit header:", err)
+		}
+		waitDuration := time.Duration(numSecondsToWait) * time.Second
+		go func() {
+			time.Sleep(waitDuration)
+			s.rateLimiter <- true
+		}()
 	}
 
 	var parsedResponse BraveSearchResponse
